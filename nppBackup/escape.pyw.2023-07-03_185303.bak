@@ -1,0 +1,12 @@
+from pythonBgt import *
+#Global variables
+intro=loadSound("sounds/intro.ogg")
+
+def begin():
+	message("Boas vindas ao jogo Escape Room dos Objetivos de Desenvolvimento Sustentável (ODSs)! Neste jogo você deverá passar por diversas salas, cada uma com um jogo representando um ODS específico. Cada sala será um nível separado do jogo, e você deve completar cada nível para escapar da sala e ir para a próxima, até chegar ao final! Pressione enter para começar a aventura.")
+
+showWindow("Escape Room ODSs")
+intro.playLogo()
+begin()
+from game1 import play
+play()

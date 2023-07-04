@@ -1,0 +1,43 @@
+from pythonBgt import *
+#Global variables
+intro=loadSound("sounds/intro.ogg")
+def main():
+	showWindow("Escape Room ODSs")
+	intro.playLogo()
+	begin()
+
+def begin():
+	message("Boas vindas ao jogo Escape Room dos Objetivos de Desenvolvimento Sustentável (ODSs)! Neste jogo você deverá passar por diversas salas, cada uma com um jogo representando um ODS específico. Cada sala será um nível separado do jogo, e você deve completar cada nível para escapar da sala e ir para a próxima, até chegar ao final! Pressione enter para começar a aventura.")
+
+#Game1 structure
+game1Base="sounds/game1/"
+mapSize=25
+class Player:
+	def __init__(self, x, stepSound):
+		self.x=x
+		self.stepSound=loadSound(stepSound)
+class TrashCan:
+	def __init__(self, x, type):
+		self.x=x
+		self.type=type
+		self.sound=loadSound(game1Base+"trash_can.ogg")
+def updateSounds():
+	for trashCan in trashCans:
+		positionSound1d(trashCan.sound, player.x, trashCan.x)
+
+player=Player(0, game1Base+"step.ogg")
+organicTrash=TrashCan(0, "organic")
+inorganicTrash=TrashCan(mapSize, "inorganic")
+inorganicTrash.sound.pitch=-15
+trashCans=[]
+trashCans.append(organicTrash)
+trashCans.append(inorganicTrash)
+for trashCan in trashCans:
+	trashCan.sound.playLooped()
+updateSounds()
+while True:
+	updateSounds()
+	wait(5)
+
+
+main()
