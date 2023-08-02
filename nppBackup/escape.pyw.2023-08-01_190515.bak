@@ -1,0 +1,265 @@
+import random
+from pythonBgt import *
+defaultSaveData={
+	"levelsComplete": 0,
+}
+if fileExists("data/save.dat"):
+	saveData=deserialize("data/save.dat")
+else:
+	serialize(defaultSaveData, "data/save.dat")
+	saveData=defaultSaveData
+game1Base="sounds/game_1/"
+success=loadSound(game1Base+"success.ogg")
+fail=loadSound(game1Base+"fail.ogg")
+palms=loadSound("sounds/palms.ogg")
+trashCollide=loadSound(game1Base+"trash_collide.ogg")
+game2Base="sounds/game_2/"
+correctCode=loadSound(game2Base+"correct_code.ogg")
+correctNumber=loadSound(game2Base+"correct_number.ogg")
+wrongPos=loadSound(game2Base+"wrong_pos.ogg")
+wrongNumber=loadSound(game2Base+"wrong_number.ogg")
+wall=loadSound(game2Base+"wall.ogg")
+typing=loadSound("sounds/typing.ogg")
+numberKeys={
+	1: 49,
+	2: 50,
+	3: 51,
+	4: 52,
+	5: 53,
+	6: 54,
+	7: 55,
+	8: 56,
+	9: 57,
+}
+def main():
+	showWindow("Escape Room ODSs")
+	begin()
+
+def begin():
+	levelsComplete=int(saveData["levelsComplete"])
+	if levelsComplete==0:
+		alert("Início do jogo", "Boas vindas ao jogo Escape Room dos Objetivos de Desenvolvimento Sustentável (ODSs)! Neste jogo você deverá passar por diversas salas, cada uma com um jogo representando um ODS específico. Cada sala será um nível separado do jogo, e você deve completar cada nível para escapar da sala e ir para a próxima, até chegar ao final! Pressione enter para começar a aventura.")
+		playGame1()
+	else:
+		answer=question("Continuar jogo salvo", "Parece que você já havia terminado algum nível quando jogou pela última vez. Deseja continuar a partir do nível "+str(levelsComplete+1)+"?")
+		if answer==1:
+			checkLevel(levelsComplete)
+		else:
+			playGame1()
+def checkLevel(levelsComplete):
+	if levelsComplete==1:
+		playGame2()
+	elif levelsComplete==2:
+		playGame3()
+def updateSaveData():
+	serialize(saveData, "data/save.dat")
+
+def playGame1():
+	mapSize=40
+	trashCans=[]
+	trashAmount=10
+	points=0
+	moveTime=200
+	currentTrash=None
+	collectSound=None
+	def updateSounds():
+		for trashCan in trashCans:
+			positionSound1d(trashCan.sound, player.x, trashCan.x, 15, 1)
+			if not trashCan.sound.playing:
+				trashCan.sound.playLooped()
+		if not trashObject.collected:
+			positionSound1d(trashObject.sound, player.x, trashObject.position, 15, 1)
+			if not trashObject.sound.playing:
+				trashObject.sound.playLooped()
+	def stopSounds():
+		for trashCan in trashCans:
+			trashCan.sound.stop()
+	def resumeSounds():
+		for trashCan in trashCans:
+			trashCan.sound.playLooped()
+	def createTrash():
+		typesList=list(trashTypes.keys())
+		objectType=random.choice(typesList)
+		trashType=trashTypes[objectType]
+		organicDif=abs(organicTrash.x-player.x)
+		inorganicDif=abs(inorganicTrash.x-player.x)
+		if organicDif>inorganicDif:
+			trashPosition=random.randint(player.x, player.x+10)
+		else:
+			trashPosition=random.randint(player.x-10, player.x)
+		trashObject=TrashObject(objectType, trashType, trashPosition, game1Base+objectType+".ogg")
+		positionSound1d(trashObject.sound, player.x, trashObject.position, 15, 1)
+		return trashObject
+	def collectTrash():
+		nonlocal collectSound
+		collectSound=loadSound(game1Base+trashObject.objectType+"_collect.ogg")
+		collectSound.play()
+		trashObject.collected=True
+		if trashObject.objectType=="glass":
+			speak("Você pegou alguns cacos de vidro.")
+		elif trashObject.objectType=="packaging":
+			speak("Você pegou uma embalagem.")
+		elif trashObject.objectType=="sheets":
+			speak("Você pegou algumas folhas de árvore.")
+		trashObject.sound.stop()
+	def checkTrash(trashCan):
+		nonlocal trashObject
+		if not trashObject.collected:
+			speak("Você ainda não pegou o lixo que precisa jogar!")
+			return
+		if trashObject.type==trashCan.type:
+			nonlocal points
+			points+=1
+			stopSounds()
+			success.playWait()
+			if trashObject.objectType=="glass":
+				message("Muito bem! O vidro é um material produzido manualmente pelos seres humanos, usando materiais como areia de sílica, sódio e cálcio. Assim, por mais que ele utilize alguns elementos provenientes da natureza, se classifica como lixo inorgânico. Parabéns!")
+			elif trashObject.objectType=="packaging":
+				message("Isso mesmo! As embalagens geralmente são feitas através de plástico, um material que pode ser fabricado através do petróleo, ou mesmo de fontes renováveis. Assim, as embalagens são lixo inorgânico. Parabéns!")
+			elif trashObject.objectType=="sheets":
+				message("Parabéns! As folhas de árvores e plantas são consideradas lixo orgânico, pois são provenientes da natureza e não feitas pelos seres humanos. Muito bem!")
+			checkGameFinished()
+			resumeSounds()
+		else:
+			stopSounds()
+			fail.playWait()
+			if trashObject.objectType=="glass":
+				message("Parece que você errou! Na verdade, embora o vidro utilize alguns materiais provenientes da natureza, como o cálcio e o sódio, seu componente principal é a areia sílica, que é produzida com o derretimento de diversos minerais, como rochas ou até mesmo a própria areia. Assim, o vidro é considerado lixo inorgânico. Guarde essa informação para as próximas vezes!")
+			elif trashObject.objectType=="packaging":
+				message("Que pena, não foi dessa vez! Na verdade, as embalagens normalmente são fabricadas através do plástico, um composto inorgânico produzido pelos próprios humanos. Lembre-se disso na próxima vez que uma embalagem aparecer!")
+			elif trashObject.objectType=="sheets":
+				message("Não é isso não! Na verdade, as folhas de árvores e plantas são provenientes da própria natureza, não sendo produzidas pelos seres humanos. Não se esqueça disso da próxima vez!")
+			resumeSounds()
+		nonlocal trashAmount
+		trashAmount-=1
+		trashObject=createTrash()
+	def checkGameFinished():
+		if points==2:
+			palms.play()
+			speak("Parabéns! Você conseguiu separar todo o lixo corretamente. Agora, prossiga para o nível 2!")
+			saveData["levelsComplete"]=1
+			updateSaveData()
+			playGame2()
+
+	class Player:
+		def __init__(self, x, stepSound):
+			self.x=x
+			self.stepSound=loadSound(stepSound)
+			self.moveTimer=Timer(paused=False)
+		def move(self, dir):
+			if not self.moveTimer.elapsed>=moveTime:
+				return
+			self.moveTimer.start()
+			if dir=="left":
+				if self.x>0:
+					self.x-=1
+					self.stepSound.stopAndPlay()
+				else:
+					trashCollide.stopAndPlay()
+			elif dir=="right":
+				if self.x<mapSize:
+					self.x+=1
+					self.stepSound.stopAndPlay()
+				else:
+					trashCollide.stopAndPlay()
+		def interact(self):
+			positionDif=abs(trashObject.position-player.x)
+			if positionDif<=2 and not trashObject.collected:
+				collectTrash()
+			else:
+				for trashCan in trashCans:
+					positionDif=abs(trashCan.x-player.x)
+					if positionDif<=2:
+						checkTrash(trashCan)
+						break
+				else:
+					speak("Você não está perto de nenhuma lixeira ou objeto.")
+	class TrashCan:
+		def __init__(self, x, type):
+			self.x=x
+			self.type=type
+			self.sound=loadSound(game1Base+"trash_can.ogg")
+	class TrashObject:
+		def __init__(self, objectType, type, position, sound):
+			self.objectType=objectType
+			self.type=type
+			self.position=position
+			self.sound=loadSound(sound)
+			self.collected=False
+
+
+	player=Player(20, game1Base+"step.ogg")
+	inorganicTrash=TrashCan(0, "inorganic")
+	organicTrash=TrashCan(mapSize, "organic")
+	trashCans.append(organicTrash)
+	trashCans.append(inorganicTrash)
+	trashTypes={
+		"glass": "inorganic",
+		"packaging": "inorganic",
+		"sheets": "organic"
+	}
+	trashObject=createTrash()
+	updateSounds()
+	while True:
+		updateSounds()
+		if keyDown(K_LEFT):
+			player.move("left")
+		elif keyDown(K_RIGHT):
+			player.move("right")
+		elif keyPressed(K_RETURN):
+			player.interact()
+		elif keyPressed(K_ESCAPE):
+			break
+		wait(5)
+
+def playGame2():
+	mapSize=15
+	points=0
+	moveTime=100
+	class Player:
+		def __init__(self, x, stepSound):
+			self.x=x
+			self.stepSound=loadSound(stepSound)
+			self.moveTimer=Timer(paused=False)
+		def move(self, dir):
+			if not self.moveTimer.elapsed>=moveTime:
+				return
+			self.moveTimer.start()
+			if dir=="left":
+				if self.x>0:
+					self.x-=1
+					self.stepSound.stopAndPlay()
+				else:
+					wall.play()
+			elif dir=="right":
+				if self.x<mapSize:
+					self.x+=1
+					self.stepSound.stopAndPlay()
+				else:
+					wall.play()
+	class Pipe:
+		def __init__(self, x):
+			self.x=x
+			self.sound=loadSound(game2Base+"pipe.ogg")
+
+	def updateSounds():
+		positionSound1d(currentPipe.sound, player.x, currentPipe.x, 15, 1)
+	def createPipe():
+		pipePosition=random.randint(0, mapSize)
+		pipe=Pipe(pipePosition)
+		pipe.sound.playLooped()
+		return pipe
+	player=Player(0, game2Base+"step.ogg")
+	currentPipe=createPipe()
+	while True:
+		updateSounds()
+		if keyDown(K_LEFT):
+			player.move("left")
+		if keyDown(K_RIGHT):
+			player.move("right")
+		if keyPressed(K_ESCAPE):
+			break
+		wait(5)
+
+
+main()

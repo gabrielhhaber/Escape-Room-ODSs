@@ -1,0 +1,88 @@
+import random
+from pythonBgt import *
+game1Base="sounds/game_1/"
+trashCollide=loadSound(game1Base+"trash_collide.ogg")
+def main():
+	showWindow("Escape Room ODSs")
+	begin()
+
+def begin():
+	alert("Início do jogo", "Boas vindas ao jogo Escape Room dos Objetivos de Desenvolvimento Sustentável (ODSs)! Neste jogo você deverá passar por diversas salas, cada uma com um jogo representando um ODS específico. Cada sala será um nível separado do jogo, e você deve completar cada nível para escapar da sala e ir para a próxima, até chegar ao final! Pressione enter para começar a aventura.")
+	playGame1()
+
+mapSize=40
+trashAmount=10
+moveTime=200
+class Player:
+	def __init__(self, x, stepSound):
+		self.x=x
+		self.stepSound=loadSound(stepSound)
+		self.moveTimer=Timer(paused=False)
+	def move(self, dir):
+		if not self.moveTimer.elapsed>=moveTime:
+			return
+		self.moveTimer.start()
+		if dir=="left":
+			if self.x>0:
+				self.x-=1
+				self.stepSound.play()
+			else:
+				trashCollide.play()
+		elif dir=="right":
+			if self.x<mapSize:
+				self.x+=1
+				self.stepSound.play()
+			else:
+				trashCollide.play()
+trashCans=[]
+class TrashCan:
+	def __init__(self, x, type):
+		self.x=x
+		self.type=type
+		self.sound=loadSound(game1Base+"trash_can.ogg")
+		self.sound.playLooped()
+class TrashObject:
+	def __init__(self, type, position, sound):
+		self.type=type
+		self.position=position
+		self.sound=loadSound(sound)
+		self.sound.playLooped()
+
+def playGame1():
+	currentTrash=None
+	def updateSounds():
+		for trashCan in trashCans:
+			positionSound1d(trashCan.sound, player.x, trashCan.x)
+	def createTrash():
+		trashType=random.choice(trashTypes)
+		trashPosition=random.randint(player.x-10, player.x+10)
+		trashObject=TrashObject(trashType, trashPosition, game1Base+trashType+".ogg")
+		positionSound1d(trashObject.sound, player.x, trachObject.position)
+		nonlocal currentTrash
+		currentTrash=trashObject
+
+	player=Player(20, game1Base+"step.ogg")
+	organicTrash=TrashCan(0, "organic")
+	inorganicTrash=TrashCan(mapSize, "inorganic")
+	trashCans.append(organicTrash)
+	trashCans.append(inorganicTrash)
+	trashTypes=[
+		"glass",
+		"packaging",
+		"paper",
+		"sheets"
+	]
+	updateSounds()
+	createTrash()
+	while True:
+		updateSounds()
+		if keyDown(K_LEFT):
+			player.move("left")
+		elif keyDown(K_RIGHT):
+			player.move("right")
+		elif keyPressed(K_RETURN):
+			player.interact()
+		wait(5)
+
+
+main()
