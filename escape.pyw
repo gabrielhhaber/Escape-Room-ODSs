@@ -18,18 +18,20 @@ correctCode=loadSound(game2Base+"correct_code.ogg")
 correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
 wrongNumber=loadSound(game2Base+"wrong_number.ogg")
+catch=loadSound(game2Base+"catch.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
+delete=loadSound("sounds/delete.ogg")
 numberKeys={
-	1: 49,
-	2: 50,
-	3: 51,
-	4: 52,
-	5: 53,
-	6: 54,
-	7: 55,
-	8: 56,
-	9: 57,
+	"1": 49,
+	"2": 50,
+	"3": 51,
+	"4": 52,
+	"5": 53,
+	"6": 54,
+	"7": 55,
+	"8": 56,
+	"9": 57,
 }
 def main():
 	showWindow("Escape Room ODSs")
@@ -237,6 +239,12 @@ def playGame2():
 					self.stepSound.stopAndPlay()
 				else:
 					wall.play()
+		def interact(self):
+			positionDif=abs(player.x-currentPipe.x)
+			if positionDif<=2:
+				requestCode()
+			else:
+				speak("Você não está perto de nenhum cano para conectar.")
 	class Pipe:
 		def __init__(self, x):
 			self.x=x
@@ -249,6 +257,42 @@ def playGame2():
 		pipe=Pipe(pipePosition)
 		pipe.sound.playLooped()
 		return pipe
+	def requestCode():
+		catch.play()
+		speak("Você agora está segurando um cano para conectar. Agora, tente descobrir o código!")
+		code=str(random.randint(1000, 9999))
+		codeTry=""
+		while not codeTry==code:
+			codeTry=""
+			while len(codeTry)<4:
+				for number, key in numberKeys.items():
+					if keyPressed(key):
+						if number=="0" and len(codeTry)==0:
+							continue
+						typing.stopAndPlay()
+						codeTry+=number
+				if keyPressed(K_BACKSPACE) and len(codeTry)>0:
+					delete.stopAndPlay()
+					speak(codeTry[-1])
+					codeTry=codeTry[:-1]
+				wait(5)
+			codeMessage="Você colocou: "
+			for number, index in enumerate(codeTry):
+				codeIndex=index+1
+				if codeIndex==len(codeTry):
+					codeMessage+=" e "
+				elif not codeIndex==1:
+					codeMessage+=", "
+				codeIndex=str(codeIndex)
+				if number in code and code[index]==number:
+					correctNumber.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição certa"
+				elif number in code and not code[index]==number:
+					wrongPos.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição errada"
+				else:
+					wrongNumber.playWait()
+					codeMessage+=f"o {codeIndex}º número não existe"
 	player=Player(0, game2Base+"step.ogg")
 	currentPipe=createPipe()
 	while True:
@@ -257,6 +301,8 @@ def playGame2():
 			player.move("left")
 		if keyDown(K_RIGHT):
 			player.move("right")
+		if keyPressed(K_RETURN):
+			player.interact()
 		if keyPressed(K_ESCAPE):
 			break
 		wait(5)
