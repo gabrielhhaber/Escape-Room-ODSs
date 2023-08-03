@@ -259,12 +259,13 @@ def playGame2():
 		return pipe
 	def requestCode():
 		catch.play()
+		currentPipe.sound.stop()
 		speak("Você agora está segurando um cano para conectar. Agora, tente descobrir o código!")
-		code=str(random.randint(1000, 9999))
+		code=str(random.randint(100, 999))
 		codeTry=""
 		while not codeTry==code:
 			codeTry=""
-			while len(codeTry)<4:
+			while len(codeTry)<3:
 				for number, key in numberKeys.items():
 					if keyPressed(key):
 						if number=="0" and len(codeTry)==0:
@@ -276,8 +277,11 @@ def playGame2():
 					speak(codeTry[-1])
 					codeTry=codeTry[:-1]
 				wait(5)
+			wait(150)
 			codeMessage="Você colocou: "
-			for number, index in enumerate(codeTry):
+			for index, number in enumerate(codeTry):
+				number=str(number)
+				index=int(index)
 				codeIndex=index+1
 				if codeIndex==len(codeTry):
 					codeMessage+=" e "
@@ -293,6 +297,9 @@ def playGame2():
 				else:
 					wrongNumber.playWait()
 					codeMessage+=f"o {codeIndex}º número não existe"
+			speak(codeMessage)
+		correctCode.play()
+		speak("Parabéns, você acertou o código! Agora, pode conectar outro cano.")
 	player=Player(0, game2Base+"step.ogg")
 	currentPipe=createPipe()
 	while True:
