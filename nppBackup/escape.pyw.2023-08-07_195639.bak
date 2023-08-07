@@ -16,7 +16,6 @@ fail=loadSound(game1Base+"fail.ogg")
 trashCollide=loadSound(game1Base+"trash_collide.ogg")
 noTrash=loadSound(game1Base+"no_trash.ogg")
 game2Base="sounds/game_2/"
-noPipe=loadSound(game2Base+"no_pipe.ogg")
 correctCode=loadSound(game2Base+"correct_code.ogg")
 correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
@@ -321,7 +320,6 @@ def playGame2():
 
 	player=Player(0, game2Base+"step.ogg")
 	currentPipe=createPipe()
-	audioMessage(game2Base+"begin.ogg")
 	while points<6:
 		updateSounds()
 		if keyDown(K_LEFT):

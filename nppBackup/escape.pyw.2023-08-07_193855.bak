@@ -16,15 +16,12 @@ fail=loadSound(game1Base+"fail.ogg")
 trashCollide=loadSound(game1Base+"trash_collide.ogg")
 noTrash=loadSound(game1Base+"no_trash.ogg")
 game2Base="sounds/game_2/"
-noPipe=loadSound(game2Base+"no_pipe.ogg")
 correctCode=loadSound(game2Base+"correct_code.ogg")
 correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
 wrongNumber=loadSound(game2Base+"wrong_number.ogg")
 catch=loadSound(game2Base+"catch.ogg")
 codeRequest=loadSound(game2Base+"code_request.ogg")
-correctMessage=loadSound(game2Base+"correct_message.ogg")
-correctAndEnd=loadSound(game2Base+"correct_and_end.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
 delete=loadSound("sounds/delete.ogg")
@@ -318,11 +315,15 @@ def playGame2():
 		correctCode.play()
 		nonlocal points
 		points+=1
-
+		if points==6:
+			correctAndEnd.playLogo()
+			audioMessage(game2Base+"ending.ogg")
+			break
+		else:
+			correctMessage.playLogo()
 	player=Player(0, game2Base+"step.ogg")
 	currentPipe=createPipe()
-	audioMessage(game2Base+"begin.ogg")
-	while points<6:
+	while True:
 		updateSounds()
 		if keyDown(K_LEFT):
 			player.move("left")
@@ -333,12 +334,6 @@ def playGame2():
 		if keyPressed(K_ESCAPE):
 			break
 		wait(5)
-	if points==6:
-		correctAndEnd.playLogo()
-		audioMessage(game2Base+"ending.ogg")
-	else:
-		correctMessage.playLogo()
-
 
 
 main()
