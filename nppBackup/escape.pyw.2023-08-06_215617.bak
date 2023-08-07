@@ -20,7 +20,6 @@ correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
 wrongNumber=loadSound(game2Base+"wrong_number.ogg")
 catch=loadSound(game2Base+"catch.ogg")
-codeRequest=loadSound(game2Base+"code_request.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
 delete=loadSound("sounds/delete.ogg")
@@ -46,7 +45,7 @@ def begin():
 		audioMessage("sounds/begin.ogg")
 		playGame1()
 	else:
-		saved.playLogo()
+		saved.playWait()
 		while True:
 			if keyPressed(K_RETURN):
 				checkLevel(levelsComplete)
@@ -292,22 +291,9 @@ def playGame2():
 				index=int(index)
 				number=str(number)
 				codeIndex=index+1
-				codeIndex=str(codeIndex)
-				if userSkipedSpeak:
-					break
 				if number in code and code[index]==number:
-					codeMessage=loadSound(game2Base+"correct_number_"+codeIndex+".ogg")
-				elif number in code and not code[index]==number:
-					codeMessage=loadSound(game2Base+"wrong_pos_"+codeIndex+".ogg")
-				else:
-					codeMessage=loadSound(game2Base+"wrong_number_"+codeIndex+".ogg")
-				codeMessage.play()
-				while codeMessage.playing:
-					if keyPressed(K_RETURN):
-						userSkipedSpeak=True
-						codeMessage.stop()
-						break
-					wait(5)
+					codeMessage=loadSound(game2Base+"correct_pos_"+number+".ogg")
+				
 		correctCode.play()
 		speak("Parabéns, você acertou o código! Agora, pode conectar outro cano.")
 	player=Player(0, game2Base+"step.ogg")

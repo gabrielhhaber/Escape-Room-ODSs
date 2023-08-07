@@ -305,7 +305,6 @@ def playGame2():
 				while codeMessage.playing:
 					if keyPressed(K_RETURN):
 						userSkipedSpeak=True
-						codeMessage.stop()
 						break
 					wait(5)
 		correctCode.play()

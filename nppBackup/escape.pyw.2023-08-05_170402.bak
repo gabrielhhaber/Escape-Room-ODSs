@@ -1,7 +1,5 @@
 import random
 from pythonBgt import *
-palms=loadSound("sounds/palms.ogg")
-saved=loadSound("sounds/saved.ogg")
 defaultSaveData={
 	"levelsComplete": 0,
 }
@@ -13,6 +11,7 @@ else:
 game1Base="sounds/game_1/"
 success=loadSound(game1Base+"success.ogg")
 fail=loadSound(game1Base+"fail.ogg")
+palms=loadSound("sounds/palms.ogg")
 trashCollide=loadSound(game1Base+"trash_collide.ogg")
 game2Base="sounds/game_2/"
 correctCode=loadSound(game2Base+"correct_code.ogg")
@@ -20,12 +19,10 @@ correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
 wrongNumber=loadSound(game2Base+"wrong_number.ogg")
 catch=loadSound(game2Base+"catch.ogg")
-codeRequest=loadSound(game2Base+"code_request.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
 delete=loadSound("sounds/delete.ogg")
 numberKeys={
-	"0": 48,
 	"1": 49,
 	"2": 50,
 	"3": 51,
@@ -46,13 +43,11 @@ def begin():
 		audioMessage("sounds/begin.ogg")
 		playGame1()
 	else:
-		saved.playLogo()
-		while True:
-			if keyPressed(K_RETURN):
-				checkLevel(levelsComplete)
-			elif keyPressed(K_ESCAPE):
-				playGame1()
-			wait(5)
+		answer=question("Continuar jogo salvo", "Parece que você já havia terminado algum nível quando jogou pela última vez. Deseja continuar a partir do nível "+str(levelsComplete+1)+"?")
+		if answer==1:
+			checkLevel(levelsComplete)
+		else:
+			playGame1()
 def checkLevel(levelsComplete):
 	if levelsComplete==1:
 		playGame2()
@@ -102,7 +97,6 @@ def playGame1():
 		collectSound=loadSound(game1Base+trashObject.objectType+"_collect.ogg")
 		collectSound.play()
 		trashObject.collected=True
-		nonlocal trashMessage
 		trashMessage=loadSound(game1Base+trashObject.objectType+"_message.ogg")
 		trashMessage.play()
 		trashObject.sound.stop()
@@ -116,17 +110,23 @@ def playGame1():
 			points+=1
 			stopSounds()
 			success.playWait()
-			successMessage=loadSound(game1Base+trashObject.objectType+"_correct.ogg")
-			successMessage.playLogo()
-			successMessage.close()
+			if trashObject.objectType=="glass":
+				message("Muito bem! O vidro é um material produzido manualmente pelos seres humanos, usando materiais como areia de sílica, sódio e cálcio. Assim, por mais que ele utilize alguns elementos provenientes da natureza, se classifica como lixo inorgânico. Parabéns!")
+			elif trashObject.objectType=="packaging":
+				message("Isso mesmo! As embalagens geralmente são feitas através de plástico, um material que pode ser fabricado através do petróleo, ou mesmo de fontes renováveis. Assim, as embalagens são lixo inorgânico. Parabéns!")
+			elif trashObject.objectType=="sheets":
+				message("Parabéns! As folhas de árvores e plantas são consideradas lixo orgânico, pois são provenientes da natureza e não feitas pelos seres humanos. Muito bem!")
 			checkGameFinished()
 			resumeSounds()
 		else:
 			stopSounds()
 			fail.playWait()
-			errorMessage=loadSound(game1Base+trashObject.objectType+"_error.ogg")
-			errorMessage.playLogo()
-			errorMessage.close()
+			if trashObject.objectType=="glass":
+				message("Parece que você errou! Na verdade, embora o vidro utilize alguns materiais provenientes da natureza, como o cálcio e o sódio, seu componente principal é a areia sílica, que é produzida com o derretimento de diversos minerais, como rochas ou até mesmo a própria areia. Assim, o vidro é considerado lixo inorgânico. Guarde essa informação para as próximas vezes!")
+			elif trashObject.objectType=="packaging":
+				message("Que pena, não foi dessa vez! Na verdade, as embalagens normalmente são fabricadas através do plástico, um composto inorgânico produzido pelos próprios humanos. Lembre-se disso na próxima vez que uma embalagem aparecer!")
+			elif trashObject.objectType=="sheets":
+				message("Não é isso não! Na verdade, as folhas de árvores e plantas são provenientes da própria natureza, não sendo produzidas pelos seres humanos. Não se esqueça disso da próxima vez!")
 			resumeSounds()
 		nonlocal trashAmount
 		trashAmount-=1
@@ -197,7 +197,6 @@ def playGame1():
 		"packaging": "inorganic",
 		"sheets": "organic"
 	}
-	trashMessage=None
 	trashObject=createTrash()
 	updateSounds()
 	while True:
@@ -258,7 +257,7 @@ def playGame2():
 	def requestCode():
 		catch.play()
 		currentPipe.sound.stop()
-		codeRequest.play()
+		speak("Você agora está segurando um cano para conectar. Agora, tente descobrir o código!")
 		code=str(random.randint(100, 999))
 		codeTry=""
 		while not codeTry==code:
@@ -276,38 +275,26 @@ def playGame2():
 					codeTry=codeTry[:-1]
 				wait(5)
 			wait(150)
+			codeMessage="Você colocou: "
 			for index, number in enumerate(codeTry):
 				number=str(number)
 				index=int(index)
 				codeIndex=index+1
+				if codeIndex==len(codeTry):
+					codeMessage+=" e "
+				elif not codeIndex==1:
+					codeMessage+=", "
 				codeIndex=str(codeIndex)
 				if number in code and code[index]==number:
 					correctNumber.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição certa"
 				elif number in code and not code[index]==number:
 					wrongPos.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição errada"
 				else:
 					wrongNumber.playWait()
-			userSkipedSpeak=False
-			for index, number in enumerate(codeTry):
-				index=int(index)
-				number=str(number)
-				codeIndex=index+1
-				codeIndex=str(codeIndex)
-				if userSkipedSpeak:
-					break
-				if number in code and code[index]==number:
-					codeMessage=loadSound(game2Base+"correct_number_"+codeIndex+".ogg")
-				elif number in code and not code[index]==number:
-					codeMessage=loadSound(game2Base+"wrong_pos_"+codeIndex+".ogg")
-				else:
-					codeMessage=loadSound(game2Base+"wrong_number_"+codeIndex+".ogg")
-				codeMessage.play()
-				while codeMessage.playing:
-					if keyPressed(K_RETURN):
-						userSkipedSpeak=True
-						codeMessage.stop()
-						break
-					wait(5)
+					codeMessage+=f"o {codeIndex}º número não existe"
+			speak(codeMessage)
 		correctCode.play()
 		speak("Parabéns, você acertou o código! Agora, pode conectar outro cano.")
 	player=Player(0, game2Base+"step.ogg")

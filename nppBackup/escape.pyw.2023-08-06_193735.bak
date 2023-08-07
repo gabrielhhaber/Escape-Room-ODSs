@@ -20,7 +20,6 @@ correctNumber=loadSound(game2Base+"correct_number.ogg")
 wrongPos=loadSound(game2Base+"wrong_pos.ogg")
 wrongNumber=loadSound(game2Base+"wrong_number.ogg")
 catch=loadSound(game2Base+"catch.ogg")
-codeRequest=loadSound(game2Base+"code_request.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
 delete=loadSound("sounds/delete.ogg")
@@ -46,7 +45,7 @@ def begin():
 		audioMessage("sounds/begin.ogg")
 		playGame1()
 	else:
-		saved.playLogo()
+		saved.playWait()
 		while True:
 			if keyPressed(K_RETURN):
 				checkLevel(levelsComplete)
@@ -258,7 +257,7 @@ def playGame2():
 	def requestCode():
 		catch.play()
 		currentPipe.sound.stop()
-		codeRequest.play()
+		speak("Você agora está segurando um cano para conectar. Agora, tente descobrir o código!")
 		code=str(random.randint(100, 999))
 		codeTry=""
 		while not codeTry==code:
@@ -276,38 +275,26 @@ def playGame2():
 					codeTry=codeTry[:-1]
 				wait(5)
 			wait(150)
+			codeMessage="Você colocou: "
 			for index, number in enumerate(codeTry):
 				number=str(number)
 				index=int(index)
 				codeIndex=index+1
+				if codeIndex==len(codeTry):
+					codeMessage+=" e "
+				elif not codeIndex==1:
+					codeMessage+=", "
 				codeIndex=str(codeIndex)
 				if number in code and code[index]==number:
 					correctNumber.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição certa"
 				elif number in code and not code[index]==number:
 					wrongPos.playWait()
+					codeMessage+=f"o {codeIndex}º número na posição errada"
 				else:
 					wrongNumber.playWait()
-			userSkipedSpeak=False
-			for index, number in enumerate(codeTry):
-				index=int(index)
-				number=str(number)
-				codeIndex=index+1
-				codeIndex=str(codeIndex)
-				if userSkipedSpeak:
-					break
-				if number in code and code[index]==number:
-					codeMessage=loadSound(game2Base+"correct_number_"+codeIndex+".ogg")
-				elif number in code and not code[index]==number:
-					codeMessage=loadSound(game2Base+"wrong_pos_"+codeIndex+".ogg")
-				else:
-					codeMessage=loadSound(game2Base+"wrong_number_"+codeIndex+".ogg")
-				codeMessage.play()
-				while codeMessage.playing:
-					if keyPressed(K_RETURN):
-						userSkipedSpeak=True
-						codeMessage.stop()
-						break
-					wait(5)
+					codeMessage+=f"o {codeIndex}º número não existe"
+			speak(codeMessage)
 		correctCode.play()
 		speak("Parabéns, você acertou o código! Agora, pode conectar outro cano.")
 	player=Player(0, game2Base+"step.ogg")

@@ -46,7 +46,7 @@ def begin():
 		audioMessage("sounds/begin.ogg")
 		playGame1()
 	else:
-		saved.playLogo()
+		saved.playWait()
 		while True:
 			if keyPressed(K_RETURN):
 				checkLevel(levelsComplete)
@@ -292,7 +292,6 @@ def playGame2():
 				index=int(index)
 				number=str(number)
 				codeIndex=index+1
-				codeIndex=str(codeIndex)
 				if userSkipedSpeak:
 					break
 				if number in code and code[index]==number:
@@ -305,7 +304,6 @@ def playGame2():
 				while codeMessage.playing:
 					if keyPressed(K_RETURN):
 						userSkipedSpeak=True
-						codeMessage.stop()
 						break
 					wait(5)
 		correctCode.play()
