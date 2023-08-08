@@ -309,7 +309,6 @@ def playGame2():
 			while len(codeTry)<3:
 				for number, key in numberKeys.items():
 					if keyPressed(key):
-						codeRequest.stop()
 						if number=="0" and len(codeTry)==0:
 							continue
 						typing.stopAndPlay()

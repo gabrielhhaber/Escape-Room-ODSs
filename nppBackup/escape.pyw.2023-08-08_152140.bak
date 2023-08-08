@@ -220,7 +220,7 @@ def playGame1():
 		elif keyPressed(K_RETURN):
 			player.interact()
 		elif keyPressed(K_ESCAPE):
-			exit()
+			break
 		wait(5)
 
 def playGame2():
@@ -231,7 +231,6 @@ def playGame2():
 		"glass",
 	]
 	collectSound=None
-	waterTrash=None
 	class Player:
 		def __init__(self, x, stepSound, moveTime):
 			self.x=x
@@ -248,19 +247,18 @@ def playGame2():
 					self.x-=1
 					self.stepSound.stopAndPlay()
 				else:
-					wall.stopAndPlay()
+					wall.play()
 			elif dir=="right":
 				if self.x<mapSize:
 					self.x+=1
 					self.stepSound.stopAndPlay()
 				else:
-					wall.stopAndPlay()
+					wall.play()
 		def interact(self):
 			if player.searchingTrash:
 				positionDif=abs(player.x-waterTrash.x)
 				if positionDif<=2:
 					waterTrash.collected=True
-					waterTrash.sound.stop()
 					player.searchingTrash=False
 					nonlocal collectSound
 					collectSound=loadSound(game2Base+waterTrash.name+"_collect.ogg")
@@ -279,8 +277,6 @@ def playGame2():
 		def __init__(self, x):
 			self.x=x
 			self.sound=loadSound(game2Base+"pipe.ogg")
-			self.sound.playLooped()
-			positionSound1d(self.sound, player.x, self.x, 15, 1)
 	class WaterStation:
 		def __init__(self, size):
 			self.size=size
@@ -290,13 +286,13 @@ def playGame2():
 			self.x=x
 			self.sound=loadSound(sound)
 			self.sound.playLooped()
-			self.collected=False
 
 	def updateSounds():
 		positionSound1d(currentPipe.sound, player.x, currentPipe.x, 15, 1)
 	def createPipe():
 		pipePosition=random.randint(0, mapSize)
 		pipe=Pipe(pipePosition)
+		pipe.sound.playLooped()
 		return pipe
 	def requestCode():
 		catch.play()
@@ -309,7 +305,6 @@ def playGame2():
 			while len(codeTry)<3:
 				for number, key in numberKeys.items():
 					if keyPressed(key):
-						codeRequest.stop()
 						if number=="0" and len(codeTry)==0:
 							continue
 						typing.stopAndPlay()
@@ -352,35 +347,30 @@ def playGame2():
 						codeMessage.stop()
 						break
 					wait(5)
-			trashFound=random.randint(1, 2)
+			objectFound=random.randint(1, 2)
 			if trashFound==1:
-				nonlocal waterTrash
-				waterTrash=createWaterTrash()
-				showTrash(waterTrash)
+				showTrash()
 		correctCode.play()
 		nonlocal points
 		points+=1
-	def createWaterTrash():
-		trashType=random.choice(trashTypes)
-		trashPosition=random.randint(13, mapSize)
-		waterTrash=WaterTrash(trashType, trashPosition, game2Base+trashType+".ogg")
-		return waterTrash
-	def showTrash(waterTrash):
+	def showTrash():
 		nonlocal mapSize
 		mapSize=50
 		player.searchingTrash=True
+		trashType=random.choice(trashTypes)
 		#trashWarning=loadSound(game2Base+trashType+"_found.ogg")
 		#trashWarning.playLogo()
 		#trashWarning.close()
 		waterStation=WaterStation(50)
-		trashPosition=random.randint(13, 50)
-		player.moveTime=550
-		while not waterTrash.collected:
-			if keyDown(K_LEFT):
+		trashPosition=random(13, 50)
+		waterTrash=WaterTrash(trashType, trashPosition, game2Base+trashType+".ogg")
+		player.moveTime=450
+		while not trash.collected:
+			if keyPressed(K_LEFT):
 				stepSound=random.choice(waterStepSounds)
 				player.stepSound=stepSound
 				player.move("left")
-			elif keyDown(K_RIGHT):
+			elif keyPressed(K_RIGHT):
 				stepSound=random.choice(waterStepSounds)
 				player.stepSound=stepSound
 				player.move("right")
@@ -401,7 +391,7 @@ def playGame2():
 		if keyPressed(K_RETURN):
 			player.interact()
 		if keyPressed(K_ESCAPE):
-			exit()
+			break
 		wait(5)
 	if points==6:
 		correctAndEnd.playLogo()

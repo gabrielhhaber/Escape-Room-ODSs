@@ -28,10 +28,6 @@ correctAndEnd=loadSound(game2Base+"correct_and_end.ogg")
 wall=loadSound(game2Base+"wall.ogg")
 typing=loadSound("sounds/typing.ogg")
 delete=loadSound("sounds/delete.ogg")
-waterStepSounds=[]
-for step in range(1, 4):
-	step=loadSound(game2Base+"water_step_"+str(step)+".ogg")
-	waterStepSounds.append(step)
 numberKeys={
 	"0": 48,
 	"1": 49,
@@ -77,6 +73,7 @@ def playGame1():
 	trashCans=[]
 	trashAmount=10
 	points=0
+	moveTime=200
 	currentTrash=None
 	collectSound=None
 	def updateSounds():
@@ -150,13 +147,12 @@ def playGame1():
 			playGame2()
 
 	class Player:
-		def __init__(self, x, stepSound, moveTime):
+		def __init__(self, x, stepSound):
 			self.x=x
 			self.stepSound=loadSound(stepSound)
 			self.moveTimer=Timer(paused=False)
-			self.moveTime=moveTime
 		def move(self, dir):
-			if not self.moveTimer.elapsed>=self.moveTime:
+			if not self.moveTimer.elapsed>=moveTime:
 				return
 			self.moveTimer.start()
 			if dir=="left":
@@ -198,7 +194,7 @@ def playGame1():
 
 
 	audioMessage(game1Base+"begin.ogg")
-	player=Player(20, game1Base+"step.ogg", 200)
+	player=Player(20, game1Base+"step.ogg")
 	inorganicTrash=TrashCan(0, "inorganic")
 	organicTrash=TrashCan(mapSize, "organic")
 	trashCans.append(organicTrash)
@@ -220,27 +216,20 @@ def playGame1():
 		elif keyPressed(K_RETURN):
 			player.interact()
 		elif keyPressed(K_ESCAPE):
-			exit()
+			break
 		wait(5)
 
 def playGame2():
 	mapSize=15
 	points=0
-	trashTypes=[
-		"packaging",
-		"glass",
-	]
-	collectSound=None
-	waterTrash=None
+	moveTime=230
 	class Player:
-		def __init__(self, x, stepSound, moveTime):
+		def __init__(self, x, stepSound):
 			self.x=x
 			self.stepSound=loadSound(stepSound)
 			self.moveTimer=Timer(paused=False)
-			self.moveTime=moveTime
-			self.searchingTrash=False
 		def move(self, dir):
-			if not self.moveTimer.elapsed>=self.moveTime:
+			if not self.moveTimer.elapsed>=moveTime:
 				return
 			self.moveTimer.start()
 			if dir=="left":
@@ -248,55 +237,30 @@ def playGame2():
 					self.x-=1
 					self.stepSound.stopAndPlay()
 				else:
-					wall.stopAndPlay()
+					wall.play()
 			elif dir=="right":
 				if self.x<mapSize:
 					self.x+=1
 					self.stepSound.stopAndPlay()
 				else:
-					wall.stopAndPlay()
+					wall.play()
 		def interact(self):
-			if player.searchingTrash:
-				positionDif=abs(player.x-waterTrash.x)
-				if positionDif<=2:
-					waterTrash.collected=True
-					waterTrash.sound.stop()
-					player.searchingTrash=False
-					nonlocal collectSound
-					collectSound=loadSound(game2Base+waterTrash.name+"_collect.ogg")
-					collectSound.play()
-					nonlocal mapSize
-					mapSize=15
-					player.moveTime=230
-					player.stepSound=loadSound(game2Base+"step.ogg")
+			positionDif=abs(player.x-currentPipe.x)
+			if positionDif<=2:
+				requestCode()
 			else:
-				positionDif=abs(player.x-currentPipe.x)
-				if positionDif<=2:
-					requestCode()
-				else:
-					speak("Você não está perto de nenhum cano para conectar.")
+				speak("Você não está perto de nenhum cano para conectar.")
 	class Pipe:
 		def __init__(self, x):
 			self.x=x
 			self.sound=loadSound(game2Base+"pipe.ogg")
-			self.sound.playLooped()
-			positionSound1d(self.sound, player.x, self.x, 15, 1)
-	class WaterStation:
-		def __init__(self, size):
-			self.size=size
-	class WaterTrash:
-		def __init__(self, name, x, sound):
-			self.name=name
-			self.x=x
-			self.sound=loadSound(sound)
-			self.sound.playLooped()
-			self.collected=False
 
 	def updateSounds():
 		positionSound1d(currentPipe.sound, player.x, currentPipe.x, 15, 1)
 	def createPipe():
 		pipePosition=random.randint(0, mapSize)
 		pipe=Pipe(pipePosition)
+		pipe.sound.playLooped()
 		return pipe
 	def requestCode():
 		catch.play()
@@ -309,7 +273,6 @@ def playGame2():
 			while len(codeTry)<3:
 				for number, key in numberKeys.items():
 					if keyPressed(key):
-						codeRequest.stop()
 						if number=="0" and len(codeTry)==0:
 							continue
 						typing.stopAndPlay()
@@ -352,44 +315,11 @@ def playGame2():
 						codeMessage.stop()
 						break
 					wait(5)
-			trashFound=random.randint(1, 2)
-			if trashFound==1:
-				nonlocal waterTrash
-				waterTrash=createWaterTrash()
-				showTrash(waterTrash)
 		correctCode.play()
 		nonlocal points
 		points+=1
-	def createWaterTrash():
-		trashType=random.choice(trashTypes)
-		trashPosition=random.randint(13, mapSize)
-		waterTrash=WaterTrash(trashType, trashPosition, game2Base+trashType+".ogg")
-		return waterTrash
-	def showTrash(waterTrash):
-		nonlocal mapSize
-		mapSize=50
-		player.searchingTrash=True
-		#trashWarning=loadSound(game2Base+trashType+"_found.ogg")
-		#trashWarning.playLogo()
-		#trashWarning.close()
-		waterStation=WaterStation(50)
-		trashPosition=random.randint(13, 50)
-		player.moveTime=550
-		while not waterTrash.collected:
-			if keyDown(K_LEFT):
-				stepSound=random.choice(waterStepSounds)
-				player.stepSound=stepSound
-				player.move("left")
-			elif keyDown(K_RIGHT):
-				stepSound=random.choice(waterStepSounds)
-				player.stepSound=stepSound
-				player.move("right")
-			elif keyPressed(K_RETURN):
-				player.interact()
-			positionSound1d(waterTrash.sound, player.x, waterTrash.x, 15, 1)
-			wait(5)
 
-	player=Player(0, game2Base+"step.ogg", 230)
+	player=Player(0, game2Base+"step.ogg")
 	currentPipe=createPipe()
 	audioMessage(game2Base+"begin.ogg")
 	while points<6:
@@ -401,7 +331,7 @@ def playGame2():
 		if keyPressed(K_RETURN):
 			player.interact()
 		if keyPressed(K_ESCAPE):
-			exit()
+			break
 		wait(5)
 	if points==6:
 		correctAndEnd.playLogo()

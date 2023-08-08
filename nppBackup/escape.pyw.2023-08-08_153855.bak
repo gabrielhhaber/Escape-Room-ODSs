@@ -280,7 +280,7 @@ def playGame2():
 			self.x=x
 			self.sound=loadSound(game2Base+"pipe.ogg")
 			self.sound.playLooped()
-			positionSound1d(self.sound, player.x, self.x, 15, 1)
+			updateSounds()
 	class WaterStation:
 		def __init__(self, size):
 			self.size=size
@@ -309,7 +309,6 @@ def playGame2():
 			while len(codeTry)<3:
 				for number, key in numberKeys.items():
 					if keyPressed(key):
-						codeRequest.stop()
 						if number=="0" and len(codeTry)==0:
 							continue
 						typing.stopAndPlay()
