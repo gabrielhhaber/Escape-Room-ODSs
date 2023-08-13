@@ -44,6 +44,7 @@ numberKeys={
 	"8": 56,
 	"9": 57,
 }
+game3Base="sounds/game_3/"
 def main():
 	showWindow("Escape Room ODSs")
 	begin()
@@ -409,6 +410,54 @@ def playGame2():
 	else:
 		correctMessage.playLogo()
 
+def playGame3():
+	class Question:
+		def __init__(self, correctAlt, altNumber=4):
+			self.correctAlt=correctAlt
+			self.altNumber=altNumber
+			self.userReply=""
+	def showQuestion(question, questIndex):
+		questIndex=str(questIndex)
+		questAudio=loadSound(game3Base+"q"+questIndex+".ogg")
+		questAudio.playLogo()
+		questAudio.close()
+		for altNumber in range(question.altNumber):
+			altAudio=loadSound(game3Base+"q_"+questIndex+"_"+possibleAlts[alt]+".ogg")
+			altAudio.playLogo()
+			altAudio.close()
+	def checkAnswer(question):
+		if question.userReply==question.correctAlt:
+			successAudio=loadSound(game3Base+"correct.ogg")
+			successAudio.playLogo()
+			successAudio.close()
+		else:
+			errorAudio=loadSound(game3Base+"incorrect.ogg")
+			errorAudio.playLogo()
+			errorAudio.close()
+	altKeys={
+		"a": 97,
+		"b": 98,
+		"c": 99,
+		"d": 100,
+		"e": 101,
+	}
+	possibleAlts=["a", "b", "c", "d", "e"]
+
+	audioMessage(game3Base+"begin.ogg")
+	questions=[
+	]
+	for index, question in enumerate(questions):
+		questIndex=index+1
+		showQuestion(question, questIndex)
+		while not question.userReply==question.correctAlt:
+			for alt, key in altKeys.items():
+				if keyPressed(key):
+					question.userReply=alt
+					checkAnswer(question)
+				elif keyPressed(K_r):
+					showQuestion(question, questIndex)
+			wait(5)
+	audioMessage(game3Base+"ending.ogg")
 
 
 main()

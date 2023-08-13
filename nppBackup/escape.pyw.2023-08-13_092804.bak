@@ -1,0 +1,414 @@
+import random
+from pythonBgt import *
+palms=loadSound("sounds/palms.ogg")
+saved=loadSound("sounds/saved.ogg")
+defaultSaveData={
+	"levelsComplete": 0,
+}
+if fileExists("data/save.dat"):
+	saveData=deserialize("data/save.dat")
+else:
+	serialize(defaultSaveData, "data/save.dat")
+	saveData=defaultSaveData
+game1Base="sounds/game_1/"
+success=loadSound(game1Base+"success.ogg")
+fail=loadSound(game1Base+"fail.ogg")
+trashCollide=loadSound(game1Base+"trash_collide.ogg")
+noTrash=loadSound(game1Base+"no_trash.ogg")
+game2Base="sounds/game_2/"
+noPipe=loadSound(game2Base+"no_pipe.ogg")
+correctCode=loadSound(game2Base+"correct_code.ogg")
+correctNumber=loadSound(game2Base+"correct_number.ogg")
+wrongPos=loadSound(game2Base+"wrong_pos.ogg")
+wrongNumber=loadSound(game2Base+"wrong_number.ogg")
+catch=loadSound(game2Base+"catch.ogg")
+codeRequest=loadSound(game2Base+"code_request.ogg")
+correctMessage=loadSound(game2Base+"correct_message.ogg")
+correctAndEnd=loadSound(game2Base+"correct_and_end.ogg")
+wall=loadSound(game2Base+"wall.ogg")
+typing=loadSound("sounds/typing.ogg")
+delete=loadSound("sounds/delete.ogg")
+waterStepSounds=[]
+for step in range(1, 4):
+	step=loadSound(game2Base+"water_step_"+str(step)+".ogg")
+	waterStepSounds.append(step)
+numberKeys={
+	"0": 48,
+	"1": 49,
+	"2": 50,
+	"3": 51,
+	"4": 52,
+	"5": 53,
+	"6": 54,
+	"7": 55,
+	"8": 56,
+	"9": 57,
+}
+def main():
+	showWindow("Escape Room ODSs")
+	begin()
+
+def begin():
+	levelsComplete=int(saveData["levelsComplete"])
+	if levelsComplete==0:
+		audioMessage("sounds/begin.ogg")
+		playGame1()
+	else:
+		saved.playLogo()
+		while True:
+			if keyPressed(K_RETURN):
+				checkLevel(levelsComplete)
+			elif keyPressed(K_ESCAPE):
+				saveData["levelsComplete"]=0
+				updateSaveData()
+				audioMessage("sounds/begin.ogg")
+				playGame1()
+			wait(5)
+def checkLevel(levelsComplete):
+	if levelsComplete==1:
+		playGame2()
+	elif levelsComplete==2:
+		playGame3()
+def updateSaveData():
+	serialize(saveData, "data/save.dat")
+
+def playGame1():
+	mapSize=40
+	trashCans=[]
+	trashAmount=10
+	points=0
+	currentTrash=None
+	collectSound=None
+	def updateSounds():
+		for trashCan in trashCans:
+			positionSound1d(trashCan.sound, player.x, trashCan.x, 15, 1)
+			if not trashCan.sound.playing:
+				trashCan.sound.playLooped()
+		if not trashObject.collected:
+			positionSound1d(trashObject.sound, player.x, trashObject.position, 15, 1)
+			if not trashObject.sound.playing:
+				trashObject.sound.playLooped()
+	def stopSounds():
+		for trashCan in trashCans:
+			trashCan.sound.stop()
+	def resumeSounds():
+		for trashCan in trashCans:
+			trashCan.sound.playLooped()
+	def createTrash():
+		typesList=list(trashTypes.keys())
+		objectType=random.choice(typesList)
+		trashType=trashTypes[objectType]
+		organicDif=abs(organicTrash.x-player.x)
+		inorganicDif=abs(inorganicTrash.x-player.x)
+		if organicDif>inorganicDif:
+			trashPosition=random.randint(player.x, player.x+10)
+		else:
+			trashPosition=random.randint(player.x-10, player.x)
+		trashObject=TrashObject(objectType, trashType, trashPosition, game1Base+objectType+".ogg")
+		positionSound1d(trashObject.sound, player.x, trashObject.position, 15, 1)
+		return trashObject
+	def collectTrash():
+		nonlocal collectSound
+		collectSound=loadSound(game1Base+trashObject.objectType+"_collect.ogg")
+		collectSound.play()
+		trashObject.collected=True
+		nonlocal trashMessage
+		trashMessage=loadSound(game1Base+trashObject.objectType+"_message.ogg")
+		trashMessage.play()
+		trashObject.sound.stop()
+	def checkTrash(trashCan):
+		nonlocal trashObject
+		if not trashObject.collected:
+			noTrash.stopAndPlay()
+			return
+		if trashObject.type==trashCan.type:
+			nonlocal points
+			points+=1
+			stopSounds()
+			success.playWait()
+			successMessage=loadSound(game1Base+trashObject.objectType+"_correct.ogg")
+			successMessage.playLogo()
+			successMessage.close()
+			checkGameFinished()
+			resumeSounds()
+		else:
+			stopSounds()
+			fail.playWait()
+			errorMessage=loadSound(game1Base+trashObject.objectType+"_error.ogg")
+			errorMessage.playLogo()
+			errorMessage.close()
+			resumeSounds()
+		nonlocal trashAmount
+		trashAmount-=1
+		trashObject=createTrash()
+	def checkGameFinished():
+		if points==2:
+			palms.play()
+			audioMessage(game1Base+"ending.ogg")
+			saveData["levelsComplete"]=1
+			updateSaveData()
+			playGame2()
+
+	class Player:
+		def __init__(self, x, stepSound, moveTime):
+			self.x=x
+			self.stepSound=loadSound(stepSound)
+			self.moveTimer=Timer(paused=False)
+			self.moveTime=moveTime
+		def move(self, dir):
+			if not self.moveTimer.elapsed>=self.moveTime:
+				return
+			self.moveTimer.start()
+			if dir=="left":
+				if self.x>0:
+					self.x-=1
+					self.stepSound.stopAndPlay()
+				else:
+					trashCollide.stopAndPlay()
+			elif dir=="right":
+				if self.x<mapSize:
+					self.x+=1
+					self.stepSound.stopAndPlay()
+				else:
+					trashCollide.stopAndPlay()
+		def interact(self):
+			positionDif=abs(trashObject.position-player.x)
+			if positionDif<=2 and not trashObject.collected:
+				collectTrash()
+			else:
+				for trashCan in trashCans:
+					positionDif=abs(trashCan.x-player.x)
+					if positionDif<=2:
+						checkTrash(trashCan)
+						break
+				else:
+					speak("Você não está perto de nenhuma lixeira ou objeto.")
+	class TrashCan:
+		def __init__(self, x, type):
+			self.x=x
+			self.type=type
+			self.sound=loadSound(game1Base+"trash_can.ogg")
+	class TrashObject:
+		def __init__(self, objectType, type, position, sound):
+			self.objectType=objectType
+			self.type=type
+			self.position=position
+			self.sound=loadSound(sound)
+			self.collected=False
+
+
+	audioMessage(game1Base+"begin.ogg")
+	player=Player(20, game1Base+"step.ogg", 200)
+	inorganicTrash=TrashCan(0, "inorganic")
+	organicTrash=TrashCan(mapSize, "organic")
+	trashCans.append(organicTrash)
+	trashCans.append(inorganicTrash)
+	trashTypes={
+		"glass": "inorganic",
+		"packaging": "inorganic",
+		"sheets": "organic"
+	}
+	trashMessage=None
+	trashObject=createTrash()
+	updateSounds()
+	while True:
+		updateSounds()
+		if keyDown(K_LEFT):
+			player.move("left")
+		elif keyDown(K_RIGHT):
+			player.move("right")
+		elif keyPressed(K_RETURN):
+			player.interact()
+		elif keyPressed(K_ESCAPE):
+			exit()
+		wait(5)
+
+def playGame2():
+	mapSize=15
+	points=0
+	trashTypes=[
+		"packaging",
+		"glass",
+	]
+	collectSound=None
+	waterTrash=None
+	class Player:
+		def __init__(self, x, stepSound, moveTime):
+			self.x=x
+			self.stepSound=loadSound(stepSound)
+			self.moveTimer=Timer(paused=False)
+			self.moveTime=moveTime
+			self.searchingTrash=False
+		def move(self, dir):
+			if not self.moveTimer.elapsed>=self.moveTime:
+				return
+			self.moveTimer.start()
+			if dir=="left":
+				if self.x>0:
+					self.x-=1
+					self.stepSound.stopAndPlay()
+				else:
+					wall.stopAndPlay()
+			elif dir=="right":
+				if self.x<mapSize:
+					self.x+=1
+					self.stepSound.stopAndPlay()
+				else:
+					wall.stopAndPlay()
+		def interact(self):
+			if player.searchingTrash:
+				positionDif=abs(player.x-waterTrash.x)
+				if positionDif<=2:
+					waterTrash.collected=True
+					waterTrash.sound.stop()
+					player.searchingTrash=False
+					nonlocal collectSound
+					collectSound=loadSound(game2Base+waterTrash.name+"_collect.ogg")
+					collectSound.play()
+					nonlocal mapSize
+					mapSize=15
+					player.moveTime=230
+					player.stepSound=loadSound(game2Base+"step.ogg")
+			else:
+				positionDif=abs(player.x-currentPipe.x)
+				if positionDif<=2:
+					requestCode()
+				else:
+					speak("Você não está perto de nenhum cano para conectar.")
+	class Pipe:
+		def __init__(self, x):
+			self.x=x
+			self.sound=loadSound(game2Base+"pipe.ogg")
+			self.sound.playLooped()
+			positionSound1d(self.sound, player.x, self.x, 15, 1)
+	class WaterStation:
+		def __init__(self, size):
+			self.size=size
+	class WaterTrash:
+		def __init__(self, name, x, sound):
+			self.name=name
+			self.x=x
+			self.sound=loadSound(sound)
+			self.sound.playLooped()
+			self.collected=False
+
+	def updateSounds():
+		positionSound1d(currentPipe.sound, player.x, currentPipe.x, 15, 1)
+	def createPipe():
+		pipePosition=random.randint(0, mapSize)
+		pipe=Pipe(pipePosition)
+		return pipe
+	def requestCode():
+		catch.play()
+		currentPipe.sound.stop()
+		codeRequest.play()
+		code=str(random.randint(100, 999))
+		codeTry=""
+		while not codeTry==code:
+			codeTry=""
+			while len(codeTry)<3:
+				for number, key in numberKeys.items():
+					if keyPressed(key):
+						codeRequest.stop()
+						if number=="0" and len(codeTry)==0:
+							continue
+						typing.stopAndPlay()
+						codeTry+=number
+				if keyPressed(K_BACKSPACE) and len(codeTry)>0:
+					delete.stopAndPlay()
+					speak(codeTry[-1])
+					codeTry=codeTry[:-1]
+				wait(5)
+			wait(150)
+			for index, number in enumerate(codeTry):
+				number=str(number)
+				index=int(index)
+				codeIndex=index+1
+				codeIndex=str(codeIndex)
+				if number in code and code[index]==number:
+					correctNumber.playWait()
+				elif number in code and not code[index]==number:
+					wrongPos.playWait()
+				else:
+					wrongNumber.playWait()
+			userSkipedSpeak=False
+			for index, number in enumerate(codeTry):
+				index=int(index)
+				number=str(number)
+				codeIndex=index+1
+				codeIndex=str(codeIndex)
+				if userSkipedSpeak:
+					break
+				if number in code and code[index]==number:
+					codeMessage=loadSound(game2Base+"correct_number_"+codeIndex+".ogg")
+				elif number in code and not code[index]==number:
+					codeMessage=loadSound(game2Base+"wrong_pos_"+codeIndex+".ogg")
+				else:
+					codeMessage=loadSound(game2Base+"wrong_number_"+codeIndex+".ogg")
+				codeMessage.play()
+				while codeMessage.playing:
+					if keyPressed(K_RETURN):
+						userSkipedSpeak=True
+						codeMessage.stop()
+						break
+					wait(5)
+			trashFound=random.randint(1, 2)
+			if trashFound==1:
+				nonlocal waterTrash
+				waterTrash=createWaterTrash()
+				showTrash(waterTrash)
+		correctCode.play()
+		nonlocal points
+		points+=1
+	def createWaterTrash():
+		trashType=random.choice(trashTypes)
+		trashPosition=random.randint(13, mapSize)
+		waterTrash=WaterTrash(trashType, trashPosition, game2Base+trashType+".ogg")
+		return waterTrash
+	def showTrash(waterTrash):
+		nonlocal mapSize
+		mapSize=50
+		player.searchingTrash=True
+		#trashWarning=loadSound(game2Base+trashType+"_found.ogg")
+		#trashWarning.playLogo()
+		#trashWarning.close()
+		waterStation=WaterStation(50)
+		trashPosition=random.randint(13, 50)
+		player.moveTime=550
+		while not waterTrash.collected:
+			if keyDown(K_LEFT):
+				stepSound=random.choice(waterStepSounds)
+				player.stepSound=stepSound
+				player.move("left")
+			elif keyDown(K_RIGHT):
+				stepSound=random.choice(waterStepSounds)
+				player.stepSound=stepSound
+				player.move("right")
+			elif keyPressed(K_RETURN):
+				player.interact()
+			positionSound1d(waterTrash.sound, player.x, waterTrash.x, 15, 1)
+			wait(5)
+
+	player=Player(0, game2Base+"step.ogg", 230)
+	currentPipe=createPipe()
+	audioMessage(game2Base+"begin.ogg")
+	while points<6:
+		updateSounds()
+		if keyDown(K_LEFT):
+			player.move("left")
+		if keyDown(K_RIGHT):
+			player.move("right")
+		if keyPressed(K_RETURN):
+			player.interact()
+		if keyPressed(K_ESCAPE):
+			exit()
+		wait(5)
+	if points==6:
+		correctAndEnd.playLogo()
+		audioMessage(game2Base+"ending.ogg")
+	else:
+		correctMessage.playLogo()
+
+
+
+main()
